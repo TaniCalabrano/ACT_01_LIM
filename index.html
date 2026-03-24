@@ -821,6 +821,7 @@
             ▶ Animación de límite
           </button>
           <button class="btn btn-ghost btn-sm" id="btn-anim-reset" onclick="resetAnimation()" style="display:none">↺ Reiniciar</button>
+          <button class="btn btn-ghost btn-sm" id="btn-anim-close" onclick="closeAnimation()" style="display:none">✕ Cerrar</button>
         </div>
 
         <!-- Dynamic limit panel -->
@@ -938,6 +939,13 @@ const fmt = v => {
   let s = r6(v).toString();
   return s;
 };
+
+/* ── Safe a reader: works correctly when a = 0 ──────── */
+function getA() {
+  const v = document.getElementById('a-value').value;
+  const n = parseFloat(v);
+  return isNaN(n) ? 2 : n;   // default 2 only if field is truly empty/invalid
+}
 
 /* ═══════════════════════════════════════════════════════
    Generate x values around a given center a
@@ -1121,7 +1129,7 @@ function initChart() {
   const { W, H } = getChartSize();
   const iW = W - MARGIN.left - MARGIN.right;
   const iH = H - MARGIN.top  - MARGIN.bottom;
-  const a  = parseFloat(document.getElementById('a-value').value) || 2;
+  const a  = getA();
   const mg = parseFloat(document.getElementById('x-margin').value) || 0.8;
 
   xScale = d3.scaleLinear().domain([a - mg, a + mg]).range([0, iW]);
@@ -1156,7 +1164,7 @@ function initChart() {
 }
 
 function drawContent(iW, iH) {
-  const a   = parseFloat(document.getElementById('a-value').value) || 2;
+  const a   = getA();
   const mg  = parseFloat(document.getElementById('x-margin').value) || 0.8;
   const ct  = currentTransform || d3.zoomIdentity;
   const tx  = ct.rescaleX(d3.scaleLinear().domain([a-mg, a+mg]).range([0, iW]));
@@ -1315,11 +1323,12 @@ function toggleAnimation() {
 }
 
 function startAnimation() {
-  const a = parseFloat(document.getElementById('a-value').value) || 2;
+  const a = getA();
   if (animStep === 0) {
     // Fresh start
     document.getElementById('limit-panel').classList.add('visible');
     document.getElementById('btn-anim-reset').style.display = 'inline-flex';
+    document.getElementById('btn-anim-close').style.display = 'inline-flex';
     resetLimitPanel();
   }
 
@@ -1405,11 +1414,18 @@ function resetAnimation() {
 
   document.getElementById('limit-panel').classList.remove('visible');
   document.getElementById('btn-anim-reset').style.display = 'none';
+  document.getElementById('btn-anim-close').style.display = 'none';
 
   // Remove animated points from chart
   if (gMain) {
     gMain.select('.layer-anim').selectAll('*').remove();
   }
+}
+
+function closeAnimation() {
+  resetAnimation();
+  // Also hide the entire limit panel
+  document.getElementById('limit-panel').classList.remove('visible');
 }
 
 function resetLimitPanel() {
@@ -1539,7 +1555,7 @@ function toggleEpsilonDelta() {
 
 /* ── Build all content depending on current a ─────── */
 function buildEpsilonDelta() {
-  const a  = parseFloat(document.getElementById('a-value').value) || 2;
+  const a  = getA();
   const L  = r6(f(a));          // f(a) = a² + 3
   const eps = parseFloat(document.getElementById('eps-slider').value) || 0.5;
 
@@ -1669,7 +1685,7 @@ function renderConclusion(a, L) {
 /* ── ε slider change ──────────────────────────────── */
 function onEpsChange(val) {
   document.getElementById('eps-val').textContent = parseFloat(val).toFixed(2);
-  const a = parseFloat(document.getElementById('a-value').value) || 2;
+  const a = getA();
   const L = r6(f(a));
   const eps = parseFloat(val);
   updateDeltaBadge(a, eps);
@@ -1827,7 +1843,7 @@ function drawEdChart(a, L, eps) {
 window.addEventListener('resize', () => {
   initChart();
   if (edVisible) {
-    const a = parseFloat(document.getElementById('a-value').value) || 2;
+    const a = getA();
     drawEdChart(a, r6(f(a)), parseFloat(document.getElementById('eps-slider').value) || 0.5);
   }
 });
